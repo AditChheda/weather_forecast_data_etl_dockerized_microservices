@@ -1,7 +1,5 @@
 # Weather Forecast Data ETL & Visualization with Dockerized Microservice
 
----
-
 ## Project Description
 
 This project demonstrates a **full end-to-end weather data pipeline** built using modern data engineering tools and containerized infrastructure.
@@ -30,8 +28,6 @@ The stored data is served through a **FastAPI web application**, which queries t
 The entire platform is **fully containerized using Docker**, running across **8 coordinated containers**, including services for Airflow, Kafka, PostgreSQL, the consumer pipeline, and the frontend application. This setup ensures the system is **reproducible, scalable, and easy to deploy**.
 
 From ingestion to visualization, the complete workflow initially takes approximately **4 minutes to execute**; subsequent runs complete in under **4 seconds**. The first run is slower because it needs to connect to Kafka, create the topic, and establish a connection to the PostgreSQL database.
-
----
 
 ## System Design Explanation
 
@@ -122,8 +118,6 @@ Benefits:
 * Simple monitoring UI
 * Direct database visibility
 
----
-
 ## Infrastructure
 
 All services run in **Docker containers** using Docker Compose.
@@ -138,8 +132,6 @@ Services included:
 | Airflow    | Workflow orchestration       |
 | Consumer   | Kafka → PostgreSQL ingestion |
 | FastAPI    | Dashboard and backend        |
-
----
 
 ## Running the Platform
 
@@ -176,8 +168,6 @@ http://localhost:8000
 
 The dashboard displays stored weather data.
 
----
-
 ## Engineering Concepts Demonstrated
 
 This project showcases several **data engineering concepts**:
@@ -189,8 +179,6 @@ This project showcases several **data engineering concepts**:
 * Data ingestion pipelines
 * Real-time processing
 * Backend API development
-
----
 
 ## Technologies Used
 
@@ -204,8 +192,6 @@ This project showcases several **data engineering concepts**:
 | Docker         | Containerization            |
 | Docker Compose | Multi-service orchestration |
 
----
-
 ## Future Improvements
 
 Potential production improvements:
@@ -214,13 +200,9 @@ Potential production improvements:
 * Data warehouse integration (Snowflake / BigQuery)
 * Real-time analytics dashboard
 
----
-
 ## Author
 
 **Adit Chheda**
-
----
 
 ## Why This Project Matters
 
