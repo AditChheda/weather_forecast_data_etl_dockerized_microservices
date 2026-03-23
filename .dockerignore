@@ -1,0 +1,11 @@
+# Ignore Airflow runtime logs
+airflow/logs/
+
+# Ignore local Python virtual environments
+weather_venv/
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+.gitignore

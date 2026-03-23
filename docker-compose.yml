@@ -1,0 +1,214 @@
+# -------------------------------------------------------------------
+# Docker Compose Configuration
+# Project: Weather Data Platform
+#
+# Description:
+# This docker-compose file orchestrates the entire weather data pipeline,
+# including streaming infrastructure (Kafka), orchestration (Airflow),
+# storage (PostgreSQL), backend consumer service, and frontend dashboard.
+#
+# Architecture Overview:
+#
+# Weather API
+#      │
+#      ▼
+# Airflow DAG
+#      │
+#      ▼
+# Kafka Producer
+#      │
+#      ▼
+# Kafka Topic
+#      │
+#      ▼
+# Kafka Consumer
+#      │
+#      ▼
+# PostgreSQL Database
+#      │
+#      ▼
+# FastAPI Frontend Dashboard
+#
+# All services run inside isolated Docker containers and communicate
+# over Docker's internal network.
+# -------------------------------------------------------------------
+
+services:
+
+  # ---------------------------------------------------------------
+  # Zookeeper Service
+  # ---------------------------------------------------------------
+  # Kafka requires Zookeeper for cluster coordination.
+  # It manages broker metadata, configuration, and leader election.
+  # ---------------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  # ---------------------------------------------------------------
+  # Kafka Broker
+  # ---------------------------------------------------------------
+  # Kafka acts as the streaming platform that receives weather
+  # messages from the Airflow producer and delivers them to
+  # downstream consumers.
+  # ---------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    environment:
+      # Unique broker ID within Kafka cluster
+      KAFKA_BROKER_ID: 1
+
+      # Zookeeper connection string
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+      # Kafka advertised listener for internal Docker network
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
+      # Security protocol mapping
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+
+      # Replication factor for internal topics
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  # ---------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------
+  # Stores processed weather data consumed from Kafka.
+  # The database also acts as the metadata database for Airflow.
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persist PostgreSQL data to host machine to ensure data durability
+      - postgres_data:/var/lib/postgresql/data
+      # Automatically initialize database schema at container startup
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+  
+
+  # ---------------------------------------------------------------
+  # Airflow Initialization Service
+  # ---------------------------------------------------------------
+  # This service initializes the Airflow metadata database and
+  # creates the default admin user.
+  #
+  # It runs once before other Airflow services start.
+  # ---------------------------------------------------------------
+  airflow-init:
+    image: aditbharatchheda/weather_forecast_data_etl_airflow:1.0
+    depends_on:
+      - postgres
+    environment:
+      # Use LocalExecutor for running tasks
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+      # Airflow metadata database connection string
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      
+      # Required UID for Airflow container
+      AIRFLOW_UID: 50000
+    command: >
+      bash -c " airflow db upgrade &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true
+      "
+
+  # ---------------------------------------------------------------
+  # Airflow Webserver
+  # ---------------------------------------------------------------
+  # Provides the Airflow UI where users can:
+  # - Monitor DAG runs
+  # - Trigger workflows
+  # - View task logs
+  # ---------------------------------------------------------------
+  airflow-webserver:
+    image: aditbharatchheda/weather_forecast_data_etl_airflow:1.0
+    depends_on:
+      - airflow-init
+      - postgres
+      - kafka
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      
+      # Disable example DAGs
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW_UID: 50000
+
+      # Extend Python path so DAG can import producer module
+      PYTHONPATH: /opt/airflow/dags:/opt/airflow/producer
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Airflow Scheduler
+  # ---------------------------------------------------------------
+  # Responsible for:
+  # - Monitoring DAGs
+  # - Scheduling tasks
+  # - Sending tasks to executor
+  # ---------------------------------------------------------------
+  airflow-scheduler:
+    image: aditbharatchheda/weather_forecast_data_etl_airflow:1.0
+    depends_on:
+      - airflow-init
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW_UID: 50000
+      
+      # Allow DAG imports to locate producer module
+      PYTHONPATH: /opt/airflow/dags:/opt/airflow/producer
+    command: scheduler
+
+  # ---------------------------------------------------------------
+  # Kafka Consumer Service
+  # ---------------------------------------------------------------
+  # Consumes weather messages from Kafka topic and inserts them
+  # into PostgreSQL database.
+  # ---------------------------------------------------------------
+  consumer:
+    image: aditbharatchheda/weather_forecast_data_etl_consumer:1.0
+    depends_on:
+      - kafka
+      - postgres
+    command: python -u consumer.py
+
+    # Ensures service automatically restarts on failure
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Frontend Dashboard
+  # ---------------------------------------------------------------
+  # FastAPI web application used to visualize weather data
+  # stored in PostgreSQL.
+  #
+  # Accessible at:
+  # http://localhost:8000
+  # ---------------------------------------------------------------
+  frontend:
+    image: aditbharatchheda/weather_forecast_data_etl_frontend:1.0
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+volumes:
+  # Volume for persisting PostgreSQL data
+  postgres_data:
