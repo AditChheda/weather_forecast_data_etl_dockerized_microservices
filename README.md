@@ -1,5 +1,17 @@
 # Weather Forecast Data ETL & Visualization with Dockerized Microservice
 
+[![Docker Code](https://img.shields.io/badge/Docker-Code-blue?logo=docker&logoColor=white)](https://github.com/AditChheda/Docker-Images/tree/weather_forecast_data_etl_dockerized_microservices/)
+[![Airflow Image](https://img.shields.io/badge/Airflow-Image-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/aditbharatchheda/weather_forecast_data_etl_airflow)
+[![Frontend Image](https://img.shields.io/badge/Frontend-Image-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/aditbharatchheda/weather_forecast_data_etl_frontend)
+[![Consumer Image](https://img.shields.io/badge/Consumer-Image-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/aditbharatchheda/weather_forecast_data_etl_consumer)
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=FF0000)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-20232A?style=for-the-badge&logo=fastapi&logoColor=61DAFB)
+![Jinja2](https://img.shields.io/badge/Jinja2-B41717?style=for-the-badge&logo=jinja&logoColor=white)
+
 ## Project Description
 
 This project demonstrates a **full end-to-end weather data pipeline** built using modern data engineering tools and containerized infrastructure.
