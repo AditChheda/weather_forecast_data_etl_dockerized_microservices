@@ -169,7 +169,7 @@ password: admin
 Trigger DAG:
 
 ```
-weather_pipeline_dag
+weather_pipeline
 ```
 
 ### 3. Open Dashboard
